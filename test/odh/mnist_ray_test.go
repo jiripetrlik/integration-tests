@@ -81,8 +81,8 @@ func TestMnistRay(t *testing.T) {
 	// Create needed roles for Notebook users
 	adminRole := CreateRole(test, namespace.Name, adminPolicyRules)
 	CreateUserRoleBinding(test, namespace.Name, adminName, adminRole)
-	userRole := CreateRole(test, namespace.Name, userPolicyRules)
-	CreateUserRoleBinding(test, namespace.Name, userName, userRole)
+	userRole := CreateClusterRole(test, userPolicyRules)
+	CreateUserClusterRoleBinding(test, userName, userRole)
 
 	// Create Kueue resources
 	resourceFlavor := CreateKueueResourceFlavor(test, v1beta1.ResourceFlavorSpec{})
