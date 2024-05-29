@@ -17,10 +17,11 @@ limitations under the License.
 package odh
 
 import (
+	"context"
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
-	gomega "github.com/onsi/gomega"
 	. "github.com/project-codeflare/codeflare-common/support"
 	rayv1 "github.com/ray-project/kuberay/ray-operator/apis/ray/v1"
 	"sigs.k8s.io/kueue/apis/kueue/v1beta1"
@@ -36,53 +37,6 @@ func TestMnistRay(t *testing.T) {
 
 	// Create a namespace
 	namespace := test.NewTestNamespace()
-
-	// Test configuration
-	jupyterNotebookConfigMapFileName := "mnist_ray_mini.ipynb"
-	config := CreateConfigMap(test, namespace.Name, map[string][]byte{
-		// MNIST Ray Notebook
-		jupyterNotebookConfigMapFileName: ReadFile(test, "resources/mnist_ray_mini.ipynb"),
-		"mnist.py":                       readMnistPy(test),
-		"requirements.txt":               readRequirementsTxt(test),
-	})
-
-	// Create required RBAC for users
-	adminPolicyRules := []rbacv1.PolicyRule{
-		{
-			Verbs:     []string{"get", "create", "delete", "list", "patch", "update"},
-			APIGroups: []string{rayv1.GroupVersion.Group},
-			Resources: []string{"rayclusters", "rayclusters/status"},
-		},
-		{
-			Verbs:     []string{"get", "list"},
-			APIGroups: []string{"route.openshift.io"},
-			Resources: []string{"routes"},
-		},
-		{
-			Verbs:     []string{"get", "list"},
-			APIGroups: []string{"networking.k8s.io"},
-			Resources: []string{"ingresses"},
-		},
-	}
-	// Needed by oauth
-	userPolicyRules := []rbacv1.PolicyRule{
-		{
-			Verbs:     []string{"get"},
-			APIGroups: []string{""},
-			Resources: []string{"pods"},
-		},
-	}
-
-	adminName := GetNotebookAdminName(test)
-	adminToken := GetNotebookAdminToken(test)
-	userName := GetNotebookUserName(test)
-	userToken := GetNotebookUserToken(test)
-
-	// Create needed roles for Notebook users
-	adminRole := CreateRole(test, namespace.Name, adminPolicyRules)
-	CreateUserRoleBinding(test, namespace.Name, adminName, adminRole)
-	userRole := CreateClusterRole(test, userPolicyRules)
-	CreateUserClusterRoleBinding(test, userName, userRole)
 
 	// Create Kueue resources
 	resourceFlavor := CreateKueueResourceFlavor(test, v1beta1.ResourceFlavorSpec{})
@@ -118,8 +72,48 @@ func TestMnistRay(t *testing.T) {
 	defer test.Client().Kueue().KueueV1beta1().ClusterQueues().Delete(test.Ctx(), clusterQueue.Name, metav1.DeleteOptions{})
 	localQueue := CreateKueueLocalQueue(test, namespace.Name, clusterQueue.Name)
 
+	// Test configuration
+	jupyterNotebookConfigMapFileName := "mnist_ray_mini.ipynb"
+	config := CreateConfigMap(test, namespace.Name, map[string][]byte{
+		// MNIST Ray Notebook
+		jupyterNotebookConfigMapFileName: ReadFile(test, "resources/mnist_ray_mini.ipynb"),
+		"mnist.py":                       readMnistPy(test),
+		"requirements.txt":               readRequirementsTxt(test),
+	})
+
+	// Define the regular(non-admin) user
+	userName := GetNotebookUserName(test)
+	userToken := GetNotebookUserToken(test)
+
+	// Create a RoleBinding to give admin access to the user for test-namespace
+	roleBinding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "namespace-admin-access",
+			Namespace: namespace.Name,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:     "User",
+				Name:     userName,
+				APIGroup: "rbac.authorization.k8s.io",
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "ClusterRole",
+			Name:     "admin", // grants admin access
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
+
+	_, err := test.Client().Core().RbacV1().RoleBindings(namespace.Name).Create(context.TODO(), roleBinding, metav1.CreateOptions{})
+	if err != nil {
+		fmt.Printf("Error creating RoleBinding: %v", err)
+	} else {
+		fmt.Printf("RoleBinding created successfully for user %s with admin access in namespace %s\n", userName, namespace.Name)
+	}
+
 	// Create Notebook CR
-	createNotebook(test, namespace, adminToken, userToken, localQueue.Name, config.Name, jupyterNotebookConfigMapFileName)
+	createNotebook(test, namespace, userToken, localQueue.Name, config.Name, jupyterNotebookConfigMapFileName)
 
 	// Gracefully cleanup Notebook
 	defer func() {
@@ -184,10 +178,10 @@ func readMnistPy(test Test) []byte {
 }
 
 // TODO: This belongs on codeflare-common/support/ray.go
-func rayClusters(t Test, namespace *corev1.Namespace) func(g gomega.Gomega) []*rayv1.RayCluster {
-	return func(g gomega.Gomega) []*rayv1.RayCluster {
+func rayClusters(t Test, namespace *corev1.Namespace) func(g Gomega) []*rayv1.RayCluster {
+	return func(g Gomega) []*rayv1.RayCluster {
 		rcs, err := t.Client().Ray().RayV1().RayClusters(namespace.Name).List(t.Ctx(), metav1.ListOptions{})
-		g.Expect(err).NotTo(gomega.HaveOccurred())
+		g.Expect(err).NotTo(HaveOccurred())
 
 		rcsp := []*rayv1.RayCluster{}
 		for _, v := range rcs.Items {

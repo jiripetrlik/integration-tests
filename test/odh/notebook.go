@@ -18,6 +18,7 @@ package odh
 
 import (
 	"bytes"
+	"fmt"
 
 	gomega "github.com/onsi/gomega"
 	. "github.com/project-codeflare/codeflare-common/support"
@@ -36,22 +37,21 @@ const recommendedTagAnnotation = "opendatahub.io/workbench-image-recommended"
 var notebookResource = schema.GroupVersionResource{Group: "kubeflow.org", Version: "v1", Resource: "notebooks"}
 
 type NotebookProps struct {
-	IngressDomain              string
-	OpenShiftApiUrl            string
-	KubernetesAdminBearerToken string
-	KubernetesUserBearerToken  string
-	Namespace                  string
-	OpenDataHubNamespace       string
-	ImageStreamName            string
-	ImageStreamTag             string
-	RayImage                   string
-	LocalQueue                 string
-	NotebookConfigMapName      string
-	NotebookConfigMapFileName  string
-	NotebookPVC                string
+	IngressDomain             string
+	OpenShiftApiUrl           string
+	KubernetesUserBearerToken string
+	Namespace                 string
+	OpenDataHubNamespace      string
+	ImageStreamName           string
+	ImageStreamTag            string
+	RayImage                  string
+	LocalQueue                string
+	NotebookConfigMapName     string
+	NotebookConfigMapFileName string
+	NotebookPVC               string
 }
 
-func createNotebook(test Test, namespace *corev1.Namespace, notebookAdminToken, notebookUserToken, localQueue, jupyterNotebookConfigMapName, jupyterNotebookConfigMapFileName string) {
+func createNotebook(test Test, namespace *corev1.Namespace, notebookUserToken, localQueue, jupyterNotebookConfigMapName, jupyterNotebookConfigMapFileName string) {
 	// Create PVC for Notebook
 	notebookPVC := CreatePersistentVolumeClaim(test, namespace.Name, "10Gi", corev1.ReadWriteOnce)
 
@@ -59,21 +59,21 @@ func createNotebook(test Test, namespace *corev1.Namespace, notebookAdminToken, 
 	is := GetImageStream(test, GetOpenDataHubNamespace(test), GetNotebookImageStreamName(test))
 	recommendedTagName := getRecommendedImageStreamTag(test, is)
 
+	fmt.Println("LocalQueue Prop : ", localQueue)
 	// Read the Notebook CR from resources and perform replacements for custom values using go template
 	notebookProps := NotebookProps{
-		IngressDomain:              GetOpenShiftIngressDomain(test),
-		OpenShiftApiUrl:            GetOpenShiftApiUrl(test),
-		KubernetesAdminBearerToken: notebookAdminToken,
-		KubernetesUserBearerToken:  notebookUserToken,
-		Namespace:                  namespace.Name,
-		OpenDataHubNamespace:       GetOpenDataHubNamespace(test),
-		ImageStreamName:            GetNotebookImageStreamName(test),
-		ImageStreamTag:             recommendedTagName,
-		RayImage:                   GetRayImage(),
-		LocalQueue:                 localQueue,
-		NotebookConfigMapName:      jupyterNotebookConfigMapName,
-		NotebookConfigMapFileName:  jupyterNotebookConfigMapFileName,
-		NotebookPVC:                notebookPVC.Name,
+		IngressDomain:             GetOpenShiftIngressDomain(test),
+		OpenShiftApiUrl:           GetOpenShiftApiUrl(test),
+		KubernetesUserBearerToken: notebookUserToken,
+		Namespace:                 namespace.Name,
+		OpenDataHubNamespace:      GetOpenDataHubNamespace(test),
+		ImageStreamName:           GetNotebookImageStreamName(test),
+		ImageStreamTag:            recommendedTagName,
+		RayImage:                  GetRayImage(),
+		LocalQueue:                localQueue,
+		NotebookConfigMapName:     jupyterNotebookConfigMapName,
+		NotebookConfigMapFileName: jupyterNotebookConfigMapFileName,
+		NotebookPVC:               notebookPVC.Name,
 	}
 	notebookTemplate, err := files.ReadFile("resources/custom-nb-small.yaml")
 	test.Expect(err).NotTo(gomega.HaveOccurred())
