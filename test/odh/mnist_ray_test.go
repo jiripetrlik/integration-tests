@@ -17,8 +17,6 @@ limitations under the License.
 package odh
 
 import (
-	"context"
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -27,7 +25,6 @@ import (
 	"sigs.k8s.io/kueue/apis/kueue/v1beta1"
 
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -85,32 +82,8 @@ func TestMnistRay(t *testing.T) {
 	userName := GetNotebookUserName(test)
 	userToken := GetNotebookUserToken(test)
 
-	// Create a RoleBinding to give admin access to the user for test-namespace
-	roleBinding := &rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "namespace-admin-access",
-			Namespace: namespace.Name,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:     "User",
-				Name:     userName,
-				APIGroup: "rbac.authorization.k8s.io",
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			Kind:     "ClusterRole",
-			Name:     "admin", // grants admin access
-			APIGroup: "rbac.authorization.k8s.io",
-		},
-	}
-
-	_, err := test.Client().Core().RbacV1().RoleBindings(namespace.Name).Create(context.TODO(), roleBinding, metav1.CreateOptions{})
-	if err != nil {
-		fmt.Printf("Error creating RoleBinding: %v", err)
-	} else {
-		fmt.Printf("RoleBinding created successfully for user %s with admin access in namespace %s\n", userName, namespace.Name)
-	}
+	// Create role binding with Namespace specific admin cluster role
+	CreateUserRoleBindingWithClusterRole(test, userName, namespace.Name, "admin")
 
 	// Create Notebook CR
 	createNotebook(test, namespace, userToken, localQueue.Name, config.Name, jupyterNotebookConfigMapFileName)

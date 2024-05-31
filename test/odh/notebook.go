@@ -18,7 +18,6 @@ package odh
 
 import (
 	"bytes"
-	"fmt"
 
 	gomega "github.com/onsi/gomega"
 	. "github.com/project-codeflare/codeflare-common/support"
@@ -59,7 +58,6 @@ func createNotebook(test Test, namespace *corev1.Namespace, notebookUserToken, l
 	is := GetImageStream(test, GetOpenDataHubNamespace(test), GetNotebookImageStreamName(test))
 	recommendedTagName := getRecommendedImageStreamTag(test, is)
 
-	fmt.Println("LocalQueue Prop : ", localQueue)
 	// Read the Notebook CR from resources and perform replacements for custom values using go template
 	notebookProps := NotebookProps{
 		IngressDomain:             GetOpenShiftIngressDomain(test),

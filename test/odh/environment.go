@@ -53,22 +53,6 @@ func GetNotebookImageStreamName(t Test) string {
 	return isName
 }
 
-func GetNotebookAdminName(t Test) string {
-	name, ok := os.LookupEnv(notebookAdminName)
-	if !ok {
-		t.T().Fatalf("Expected environment variable %s not found, please use this environment variable to specify token of the authenticated Notebook admin.", notebookAdminName)
-	}
-	return name
-}
-
-func GetNotebookAdminToken(t Test) string {
-	token, ok := os.LookupEnv(notebookAdminToken)
-	if !ok {
-		t.T().Fatalf("Expected environment variable %s not found, please use this environment variable to specify token of the authenticated Notebook admin.", notebookAdminToken)
-	}
-	return token
-}
-
 func GetNotebookUserName(t Test) string {
 	name, ok := os.LookupEnv(notebookUserName)
 	if !ok {

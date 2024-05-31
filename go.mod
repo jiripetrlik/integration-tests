@@ -7,11 +7,11 @@ toolchain go1.21.5
 require (
 	github.com/onsi/gomega v1.31.1
 	github.com/openshift/api v0.0.0-20230213134911-7ba313770556
-	github.com/project-codeflare/codeflare-common v0.0.0-20240415144758-8ab7f860e594
+	github.com/project-codeflare/codeflare-common v0.0.0-20240531123307-2c80701fd20b
 	github.com/ray-project/kuberay/ray-operator v1.1.0
-	k8s.io/api v0.29.1
-	k8s.io/apimachinery v0.29.1
-	sigs.k8s.io/kueue v0.6.1
+	k8s.io/api v0.29.2
+	k8s.io/apimachinery v0.29.2
+	sigs.k8s.io/kueue v0.6.2
 )
 
 require (
@@ -50,7 +50,7 @@ require (
 	github.com/openshift-online/ocm-sdk-go v0.1.368 // indirect
 	github.com/openshift/client-go v0.0.0-20221019143426-16aed247da5c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/project-codeflare/appwrapper v0.7.0 // indirect
+	github.com/project-codeflare/appwrapper v0.8.0 // indirect
 	github.com/prometheus/client_golang v1.18.0 // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/common v0.46.0 // indirect
@@ -71,7 +71,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.29.0 // indirect
-	k8s.io/client-go v0.29.1 // indirect
+	k8s.io/client-go v0.29.2 // indirect
 	k8s.io/component-base v0.29.1 // indirect
 	k8s.io/klog/v2 v2.110.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
