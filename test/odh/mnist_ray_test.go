@@ -17,6 +17,7 @@ limitations under the License.
 package odh
 
 import (
+	"bytes"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -29,7 +30,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestMnistRay(t *testing.T) {
+func TestMnistRayCpu(t *testing.T) {
+	mnistRay(t, false)
+}
+
+func TestMnistRayGpu(t *testing.T) {
+	mnistRay(t, true)
+}
+
+func mnistRay(t *testing.T, gpus_enabled bool) {
 	test := With(t)
 
 	// Create a namespace
@@ -71,9 +80,15 @@ func TestMnistRay(t *testing.T) {
 
 	// Test configuration
 	jupyterNotebookConfigMapFileName := "mnist_ray_mini.ipynb"
+	notebook := ReadFile(test, "resources/mnist_ray_mini.ipynb")
+	if gpus_enabled == true {
+		notebook = bytes.Replace(notebook, []byte("head_gpus=0"), []byte("head_gpus=1"), 1)
+		notebook = bytes.Replace(notebook, []byte("num_workers=1"), []byte("num_workers=0"), 1)
+		notebook = bytes.Replace(notebook, []byte("num_gpus=0"), []byte("num_gpus=1"), 1)
+	}
 	config := CreateConfigMap(test, namespace.Name, map[string][]byte{
 		// MNIST Ray Notebook
-		jupyterNotebookConfigMapFileName: ReadFile(test, "resources/mnist_ray_mini.ipynb"),
+		jupyterNotebookConfigMapFileName: notebook,
 		"mnist.py":                       readMnistPy(test),
 		"requirements.txt":               readRequirementsTxt(test),
 	})
